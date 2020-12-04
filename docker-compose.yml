@@ -7,19 +7,15 @@ services:
     restart: always
     ports:
       - "8091:80"
-    environment:
-      - "ConnectionStrings:PromocodeFactoryAdministrationDb=Host=promocode-factory-administration-db;Database=promocode_factory_administration_db;Username=postgres;Password=docker"          
     depends_on: 
       - promocode-factory-administration-db
   #Administration Db
   promocode-factory-administration-db:
-    image: "postgres:9.6.17"
+    image: mongo
     container_name: 'promocode-factory-administration-db'
     restart: always 
     ports:
-      - 5433:5432
-    environment: 
-      - POSTGRES_PASSWORD=docker
+      - 27017:27017
 
   #ReceivingFromPartner Api
   promocode-factory-receiving-from-partner-api:

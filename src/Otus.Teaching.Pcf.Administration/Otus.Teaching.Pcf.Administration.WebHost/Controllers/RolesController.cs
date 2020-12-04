@@ -3,8 +3,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Otus.Teaching.Pcf.Administration.WebHost.Models;
-using Otus.Teaching.Pcf.Administration.Core.Abstractions.Repositories;
-using Otus.Teaching.Pcf.Administration.Core.Domain.Administration;
+using Otus.Teaching.Pcf.Administration.DataAccess;
+using MongoDB.Driver;
 
 namespace Otus.Teaching.Pcf.Administration.WebHost.Controllers
 {
@@ -15,11 +15,11 @@ namespace Otus.Teaching.Pcf.Administration.WebHost.Controllers
     [Route("api/v1/[controller]")]
     public class RolesController
     {
-        private readonly IRepository<Role> _rolesRepository;
+        private readonly IMongoDbContext mongoDbContext;
 
-        public RolesController(IRepository<Role> rolesRepository)
+        public RolesController(IMongoDbContext mongoDbContext)
         {
-            _rolesRepository = rolesRepository;
+            this.mongoDbContext = mongoDbContext;
         }
         
         /// <summary>
@@ -29,9 +29,9 @@ namespace Otus.Teaching.Pcf.Administration.WebHost.Controllers
         [HttpGet]
         public async Task<IEnumerable<RoleItemResponse>> GetRolesAsync()
         {
-            var roles = await _rolesRepository.GetAllAsync();
+            var roles = await mongoDbContext.Roles.FindAsync(x =>  true);
 
-            var rolesModelList = roles.Select(x => 
+            var rolesModelList = roles.ToList().Select(x => 
                 new RoleItemResponse()
                 {
                     Id = x.Id,

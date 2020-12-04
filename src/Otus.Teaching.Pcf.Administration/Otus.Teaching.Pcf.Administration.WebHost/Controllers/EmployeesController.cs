@@ -6,6 +6,8 @@ using Microsoft.AspNetCore.Mvc;
 using Otus.Teaching.Pcf.Administration.WebHost.Models;
 using Otus.Teaching.Pcf.Administration.Core.Abstractions.Repositories;
 using Otus.Teaching.Pcf.Administration.Core.Domain.Administration;
+using Otus.Teaching.Pcf.Administration.DataAccess;
+using MongoDB.Driver;
 
 namespace Otus.Teaching.Pcf.Administration.WebHost.Controllers
 {
@@ -17,11 +19,11 @@ namespace Otus.Teaching.Pcf.Administration.WebHost.Controllers
     public class EmployeesController
         : ControllerBase
     {
-        private readonly IRepository<Employee> _employeeRepository;
+        private readonly IMongoDbContext _mongoDbContext;
 
-        public EmployeesController(IRepository<Employee> employeeRepository)
+        public EmployeesController(IMongoDbContext mongoDbContext)
         {
-            _employeeRepository = employeeRepository;
+            _mongoDbContext = mongoDbContext;
         }
         
         /// <summary>
@@ -31,9 +33,9 @@ namespace Otus.Teaching.Pcf.Administration.WebHost.Controllers
         [HttpGet]
         public async Task<List<EmployeeShortResponse>> GetEmployeesAsync()
         {
-            var employees = await _employeeRepository.GetAllAsync();
+            var employees = await _mongoDbContext.Employees.FindAsync(x => true);
 
-            var employeesModelList = employees.Select(x => 
+            var employeesModelList = employees.ToList().Select(x => 
                 new EmployeeShortResponse()
                     {
                         Id = x.Id,
@@ -52,10 +54,14 @@ namespace Otus.Teaching.Pcf.Administration.WebHost.Controllers
         [HttpGet("{id:guid}")]
         public async Task<ActionResult<EmployeeResponse>> GetEmployeeByIdAsync(Guid id)
         {
-            var employee = await _employeeRepository.GetByIdAsync(id);
+            var employees = await _mongoDbContext.Employees.FindAsync(x => x.Id == id);
+            var employee = employees?.SingleOrDefault();
 
             if (employee == null)
                 return NotFound();
+
+            var roles = await _mongoDbContext.Roles.FindAsync(x => x.Id == employee.RoleId);
+            var role = roles.SingleOrDefault();
 
             var employeeModel = new EmployeeResponse()
             {
@@ -64,8 +70,8 @@ namespace Otus.Teaching.Pcf.Administration.WebHost.Controllers
                 Role = new RoleItemResponse()
                 {
                     Id = employee.Id,
-                    Name = employee.Role.Name,
-                    Description = employee.Role.Description
+                    Name = role.Name,
+                    Description = role.Description
                 },
                 FullName = employee.FullName,
                 AppliedPromocodesCount = employee.AppliedPromocodesCount
@@ -83,14 +89,15 @@ namespace Otus.Teaching.Pcf.Administration.WebHost.Controllers
         
         public async Task<IActionResult> UpdateAppliedPromocodesAsync(Guid id)
         {
-            var employee = await _employeeRepository.GetByIdAsync(id);
+            var employees = await _mongoDbContext.Employees.FindAsync(x => x.Id == id);
+            var employee = employees?.SingleOrDefault();
 
             if (employee == null)
                 return NotFound();
 
             employee.AppliedPromocodesCount++;
 
-            await _employeeRepository.UpdateAsync(employee);
+            await _mongoDbContext.Employees.ReplaceOneAsync(x => x.Id == id, employee);
 
             return Ok();
         }

@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using Otus.Teaching.Pcf.Administration.Core.Domain.Administration;
 
 namespace Otus.Teaching.Pcf.Administration.DataAccess.Data
@@ -15,7 +14,7 @@ namespace Otus.Teaching.Pcf.Administration.DataAccess.Data
                 Email = "owner@somemail.ru",
                 FirstName = "Иван",
                 LastName = "Сергеев",
-                Role = Roles.FirstOrDefault(x => x.Name == "Admin"),
+                RoleId = Guid.Parse("53729686-a368-4eeb-8bfa-cc69b6050d02"),
                 AppliedPromocodesCount = 5
             },
             new Employee()
@@ -24,7 +23,7 @@ namespace Otus.Teaching.Pcf.Administration.DataAccess.Data
                 Email = "andreev@somemail.ru",
                 FirstName = "Петр",
                 LastName = "Андреев",
-                Role = Roles.FirstOrDefault(x => x.Name == "PartnerManager"),
+                RoleId = Guid.Parse("b0ae7aac-5493-45cd-ad16-87426a5e7665"),
                 AppliedPromocodesCount = 10
             },
         };

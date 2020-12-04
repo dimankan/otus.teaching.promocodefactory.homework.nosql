@@ -16,6 +16,9 @@ using Otus.Teaching.Pcf.Administration.DataAccess.Data;
 using Otus.Teaching.Pcf.Administration.DataAccess.Repositories;
 using Otus.Teaching.Pcf.Administration.Core.Domain.Administration;
 using IConfiguration = Microsoft.Extensions.Configuration.IConfiguration;
+using MongoDB.Driver;
+using Microsoft.Extensions.Options;
+using Otus.Teaching.Pcf.Administration.DataAccess.MongoAdmin;
 
 namespace Otus.Teaching.Pcf.Administration.WebHost
 {
@@ -34,15 +37,14 @@ namespace Otus.Teaching.Pcf.Administration.WebHost
         {
             services.AddControllers().AddMvcOptions(x=> 
                 x.SuppressAsyncSuffixInActionNames = false);
-            services.AddScoped(typeof(IRepository<>), typeof(EfRepository<>));
-            services.AddScoped<IDbInitializer, EfDbInitializer>();
-            services.AddDbContext<DataContext>(x =>
-            {
-                //x.UseSqlite("Filename=PromocodeFactoryAdministrationDb.sqlite");
-                x.UseNpgsql(Configuration.GetConnectionString("PromocodeFactoryAdministrationDb"));
-                x.UseSnakeCaseNamingConvention();
-                x.UseLazyLoadingProxies();
-            });
+            services.AddScoped<IMongoDbContext, MongoDbContext>();
+            services.AddScoped<IDbInitializer, MongoDbInitializer>();
+
+            services.Configure<MongoAdministrationDatabaseSettings>(
+                    Configuration.GetSection("MongoDatabaseSettings"));
+
+            services.AddSingleton<IMongoAdministrationDatabaseSettings>(sp =>
+                sp.GetRequiredService<IOptions<MongoAdministrationDatabaseSettings>>().Value);
 
             services.AddOpenApiDocument(options =>
             {

@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 
 namespace Otus.Teaching.Pcf.Administration.Core.Domain.Administration
 {
@@ -14,7 +13,6 @@ namespace Otus.Teaching.Pcf.Administration.Core.Domain.Administration
         public string Email { get; set; }
 
         public Guid RoleId { get; set; }
-        public virtual Role Role { get; set; }
 
         public int AppliedPromocodesCount { get; set; }
     }
