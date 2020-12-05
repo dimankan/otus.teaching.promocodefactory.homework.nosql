@@ -3,8 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
-using Otus.Teaching.Pcf.GivingToCustomer.Core.Abstractions.Repositories;
+using MongoDB.Driver;
 using Otus.Teaching.Pcf.GivingToCustomer.Core.Domain;
+using Otus.Teaching.Pcf.GivingToCustomer.DataAccess;
 using Otus.Teaching.Pcf.GivingToCustomer.WebHost.Mappers;
 using Otus.Teaching.Pcf.GivingToCustomer.WebHost.Models;
 
@@ -18,14 +19,11 @@ namespace Otus.Teaching.Pcf.GivingToCustomer.WebHost.Controllers
     public class CustomersController
         : ControllerBase
     {
-        private readonly IRepository<Customer> _customerRepository;
-        private readonly IRepository<Preference> _preferenceRepository;
+        private readonly IMongoDbContext mongoDbContext;
 
-        public CustomersController(IRepository<Customer> customerRepository, 
-            IRepository<Preference> preferenceRepository)
+        public CustomersController(IMongoDbContext mongoDbContext)
         {
-            _customerRepository = customerRepository;
-            _preferenceRepository = preferenceRepository;
+            this.mongoDbContext = mongoDbContext;
         }
         
         /// <summary>
@@ -35,9 +33,9 @@ namespace Otus.Teaching.Pcf.GivingToCustomer.WebHost.Controllers
         [HttpGet]
         public async Task<ActionResult<List<CustomerShortResponse>>> GetCustomersAsync()
         {
-            var customers =  await _customerRepository.GetAllAsync();
+            var customers =  await mongoDbContext.Customers.FindAsync(x => true);
 
-            var response = customers.Select(x => new CustomerShortResponse()
+            var response = customers.ToList().Select(x => new CustomerShortResponse()
             {
                 Id = x.Id,
                 Email = x.Email,
@@ -56,9 +54,18 @@ namespace Otus.Teaching.Pcf.GivingToCustomer.WebHost.Controllers
         [HttpGet("{id:guid}")]
         public async Task<ActionResult<CustomerResponse>> GetCustomerAsync(Guid id)
         {
-            var customer =  await _customerRepository.GetByIdAsync(id);
+            var customers =  await mongoDbContext.Customers.FindAsync(x => x.Id == id);
+            var customer = customers?.SingleOrDefault();
 
-            var response = new CustomerResponse(customer);
+            if (customer == null)
+                return NotFound();
+
+            var preferenceIds = (await mongoDbContext.CustomerPreferences.FindAsync(x => x.CustomerId == customer.Id)).ToEnumerable().Select(x => x.PreferenceId);
+            var preferences = (await mongoDbContext.Preferences.FindAsync(x => preferenceIds.Contains(x.Id))).ToEnumerable();
+            var promoCodeIds = (await mongoDbContext.PromoCodeCustomers.FindAsync(x => x.CustomerId == customer.Id)).ToEnumerable().Select(x => x.PromoCodeId);
+            var promoCodes = (await mongoDbContext.PromoCodes.FindAsync(x => promoCodeIds.Contains(x.Id))).ToEnumerable();
+
+            var response = new CustomerResponse(customer, preferences, promoCodes);
 
             return Ok(response);
         }
@@ -70,13 +77,10 @@ namespace Otus.Teaching.Pcf.GivingToCustomer.WebHost.Controllers
         [HttpPost]
         public async Task<ActionResult<CustomerResponse>> CreateCustomerAsync(CreateOrEditCustomerRequest request)
         {
-            //Получаем предпочтения из бд и сохраняем большой объект
-            var preferences = await _preferenceRepository
-                .GetRangeByIdsAsync(request.PreferenceIds);
-
-            Customer customer = CustomerMapper.MapFromModel(request, preferences);
+            Customer customer = CustomerMapper.MapFromModel(request);
             
-            await _customerRepository.AddAsync(customer);
+            await mongoDbContext.Customers.InsertOneAsync(customer);
+            await mongoDbContext.CustomerPreferences.InsertManyAsync(request.PreferenceIds.Select(x => new CustomerPreference() { CustomerId = customer.Id, PreferenceId = x }));
 
             return CreatedAtAction(nameof(GetCustomerAsync), new {id = customer.Id}, customer.Id);
         }
@@ -89,16 +93,18 @@ namespace Otus.Teaching.Pcf.GivingToCustomer.WebHost.Controllers
         [HttpPut("{id:guid}")]
         public async Task<IActionResult> EditCustomersAsync(Guid id, CreateOrEditCustomerRequest request)
         {
-            var customer = await _customerRepository.GetByIdAsync(id);
+            var customers = await mongoDbContext.Customers.FindAsync(x => x.Id == id);
+            var customer = customers?.SingleOrDefault();
             
             if (customer == null)
-                return NotFound();
+                return NotFound();            
             
-            var preferences = await _preferenceRepository.GetRangeByIdsAsync(request.PreferenceIds);
-            
-            CustomerMapper.MapFromModel(request, preferences, customer);
+            CustomerMapper.MapFromModel(request, customer);
 
-            await _customerRepository.UpdateAsync(customer);
+            await mongoDbContext.Customers.ReplaceOneAsync(x => x.Id == id, customer);
+            await mongoDbContext.CustomerPreferences.DeleteManyAsync(x => x.CustomerId == id);
+            await mongoDbContext.CustomerPreferences.InsertManyAsync(request.PreferenceIds.Select(preferenceId => 
+                new CustomerPreference() { CustomerId = id, PreferenceId = preferenceId }));
 
             return NoContent();
         }
@@ -110,13 +116,7 @@ namespace Otus.Teaching.Pcf.GivingToCustomer.WebHost.Controllers
         [HttpDelete("{id:guid}")]
         public async Task<IActionResult> DeleteCustomerAsync(Guid id)
         {
-            var customer = await _customerRepository.GetByIdAsync(id);
-            
-            if (customer == null)
-                return NotFound();
-
-            await _customerRepository.DeleteAsync(customer);
-
+            var customers = await mongoDbContext.Customers.FindOneAndDeleteAsync(x => x.Id == id);
             return NoContent();
         }
     }

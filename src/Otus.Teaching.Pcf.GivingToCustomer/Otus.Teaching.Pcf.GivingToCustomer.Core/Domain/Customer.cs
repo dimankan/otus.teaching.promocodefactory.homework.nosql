@@ -1,6 +1,4 @@
-﻿using System.Collections.Generic;
-
-namespace Otus.Teaching.Pcf.GivingToCustomer.Core.Domain
+﻿namespace Otus.Teaching.Pcf.GivingToCustomer.Core.Domain
 {
     public class Customer
         :BaseEntity
@@ -11,9 +9,5 @@ namespace Otus.Teaching.Pcf.GivingToCustomer.Core.Domain
         public string FullName => $"{FirstName} {LastName}";
 
         public string Email { get; set; }
-
-        public virtual ICollection<CustomerPreference> Preferences { get; set; }
-        
-        public virtual ICollection<PromoCodeCustomer> PromoCodes { get; set; }
     }
 }

@@ -1,7 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using Otus.Teaching.Pcf.GivingToCustomer.Core.Domain;
 using Otus.Teaching.Pcf.GivingToCustomer.WebHost.Models;
 
@@ -9,7 +6,7 @@ using Otus.Teaching.Pcf.GivingToCustomer.WebHost.Models;
 {
     public class PromoCodeMapper
     {
-        public static PromoCode MapFromModel(GivePromoCodeRequest request, Preference preference, IEnumerable<Customer> customers) {
+        public static PromoCode MapFromModel(GivePromoCodeRequest request) {
 
             var promocode = new PromoCode();
             promocode.Id = request.PromoCodeId;
@@ -21,22 +18,7 @@ using Otus.Teaching.Pcf.GivingToCustomer.WebHost.Models;
             promocode.BeginDate = DateTime.Parse(request.BeginDate);
             promocode.EndDate = DateTime.Parse(request.EndDate);
 
-            promocode.Preference = preference;
-            promocode.PreferenceId = preference.Id;
-
-            promocode.Customers = new List<PromoCodeCustomer>();
-
-            foreach (var item in customers)
-            {
-                promocode.Customers.Add(new PromoCodeCustomer()
-                {
-
-                    CustomerId = item.Id,
-                    Customer = item,
-                    PromoCodeId = promocode.Id,
-                    PromoCode = promocode
-                });
-            };
+            promocode.PreferenceId = request.PreferenceId;
 
             return promocode;
         }

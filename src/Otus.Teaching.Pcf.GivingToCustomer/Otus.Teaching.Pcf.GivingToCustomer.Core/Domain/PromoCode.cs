@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 
 namespace Otus.Teaching.Pcf.GivingToCustomer.Core.Domain
 {
@@ -14,12 +13,8 @@ namespace Otus.Teaching.Pcf.GivingToCustomer.Core.Domain
 
         public DateTime EndDate { get; set; }
 
-        public Guid PartnerId { get; set; }
-        
-        public virtual Preference Preference { get; set; }
+        public Guid PartnerId { get; set; }        
 
-        public Guid PreferenceId { get; set; }
-        
-        public virtual ICollection<PromoCodeCustomer> Customers { get; set; }
+        public Guid PreferenceId { get; set; }        
     }
 }

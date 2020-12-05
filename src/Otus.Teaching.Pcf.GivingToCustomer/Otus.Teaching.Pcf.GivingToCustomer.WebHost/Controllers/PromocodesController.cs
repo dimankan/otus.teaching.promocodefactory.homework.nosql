@@ -1,10 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
-using Otus.Teaching.Pcf.GivingToCustomer.Core.Abstractions.Repositories;
+using MongoDB.Driver;
 using Otus.Teaching.Pcf.GivingToCustomer.Core.Domain;
+using Otus.Teaching.Pcf.GivingToCustomer.DataAccess;
 using Otus.Teaching.Pcf.GivingToCustomer.WebHost.Mappers;
 using Otus.Teaching.Pcf.GivingToCustomer.WebHost.Models;
 
@@ -18,18 +18,13 @@ namespace Otus.Teaching.Pcf.GivingToCustomer.WebHost.Controllers
     public class PromocodesController
         : ControllerBase
     {
-        private readonly IRepository<PromoCode> _promoCodesRepository;
-        private readonly IRepository<Preference> _preferencesRepository;
-        private readonly IRepository<Customer> _customersRepository;
+        private IMongoDbContext mongoDbContext;
 
-        public PromocodesController(IRepository<PromoCode> promoCodesRepository, 
-            IRepository<Preference> preferencesRepository, IRepository<Customer> customersRepository)
+        public PromocodesController(IMongoDbContext mongoDbContext)
         {
-            _promoCodesRepository = promoCodesRepository;
-            _preferencesRepository = preferencesRepository;
-            _customersRepository = customersRepository;
+            this.mongoDbContext = mongoDbContext;
         }
-        
+
         /// <summary>
         /// Получить все промокоды
         /// </summary>
@@ -37,9 +32,9 @@ namespace Otus.Teaching.Pcf.GivingToCustomer.WebHost.Controllers
         [HttpGet]
         public async Task<ActionResult<List<PromoCodeShortResponse>>> GetPromocodesAsync()
         {
-            var promocodes = await _promoCodesRepository.GetAllAsync();
+            var promocodes = await mongoDbContext.PromoCodes.FindAsync(x => true);
 
-            var response = promocodes.Select(x => new PromoCodeShortResponse()
+            var response = promocodes.ToList().Select(x => new PromoCodeShortResponse()
             {
                 Id = x.Id,
                 Code = x.Code,
@@ -59,22 +54,16 @@ namespace Otus.Teaching.Pcf.GivingToCustomer.WebHost.Controllers
         [HttpPost]
         public async Task<IActionResult> GivePromoCodesToCustomersWithPreferenceAsync(GivePromoCodeRequest request)
         {
-            //Получаем предпочтение по имени
-            var preference = await _preferencesRepository.GetByIdAsync(request.PreferenceId);
-
-            if (preference == null)
-            {
-                return BadRequest();
-            }
-
             //  Получаем клиентов с этим предпочтением:
-            var customers = await _customersRepository
-                .GetWhere(d => d.Preferences.Any(x =>
-                    x.Preference.Id == preference.Id));
+            var customerPreferences = await mongoDbContext.CustomerPreferences.FindAsync(x => x.PreferenceId == request.PreferenceId);
+            var customerIds = customerPreferences.ToList().Select(x => x.CustomerId);
+            var customers = await mongoDbContext.Customers.FindAsync(x => customerIds.Contains(x.Id));
 
-            PromoCode promoCode = PromoCodeMapper.MapFromModel(request, preference, customers);
+            PromoCode promoCode = PromoCodeMapper.MapFromModel(request);
+            var promoCodeCustomers = customers.ToList().Select(customer => new PromoCodeCustomer() { CustomerId = customer.Id, PromoCodeId = promoCode.Id });
 
-            await _promoCodesRepository.AddAsync(promoCode);
+            await mongoDbContext.PromoCodeCustomers.InsertManyAsync(promoCodeCustomers);
+            await mongoDbContext.PromoCodes.InsertOneAsync(promoCode);
 
             return CreatedAtAction(nameof(GetPromocodesAsync), new { }, null);
         }

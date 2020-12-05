@@ -1,10 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
-using Otus.Teaching.Pcf.GivingToCustomer.Core.Abstractions.Repositories;
-using Otus.Teaching.Pcf.GivingToCustomer.Core.Domain;
+using MongoDB.Driver;
+using Otus.Teaching.Pcf.GivingToCustomer.DataAccess;
 using Otus.Teaching.Pcf.GivingToCustomer.WebHost.Models;
 
 namespace Otus.Teaching.Pcf.GivingToCustomer.WebHost.Controllers
@@ -16,14 +15,14 @@ namespace Otus.Teaching.Pcf.GivingToCustomer.WebHost.Controllers
     [Route("api/v1/[controller]")]
     public class PreferencesController
         : ControllerBase
-    {
-        private readonly IRepository<Preference> _preferencesRepository;
+    {   
+        private IMongoDbContext mongoDbContext;
 
-        public PreferencesController(IRepository<Preference> preferencesRepository)
+        public PreferencesController(IMongoDbContext mongoDbContext)
         {
-            _preferencesRepository = preferencesRepository;
+            this.mongoDbContext = mongoDbContext;
         }
-        
+
         /// <summary>
         /// Получить список предпочтений
         /// </summary>
@@ -31,9 +30,9 @@ namespace Otus.Teaching.Pcf.GivingToCustomer.WebHost.Controllers
         [HttpGet]
         public async Task<ActionResult<List<PreferenceResponse>>> GetPreferencesAsync()
         {
-            var preferences = await _preferencesRepository.GetAllAsync();
+            var preferences = await mongoDbContext.Preferences.FindAsync(x => true);
 
-            var response = preferences.Select(x => new PreferenceResponse()
+            var response = preferences.ToList().Select(x => new PreferenceResponse()
             {
                 Id = x.Id,
                 Name = x.Name

@@ -1,22 +1,14 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Castle.Core.Configuration;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Http;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Configuration;
 using Otus.Teaching.Pcf.GivingToCustomer.Core.Abstractions.Gateways;
-using Otus.Teaching.Pcf.GivingToCustomer.Core.Abstractions.Repositories;
 using Otus.Teaching.Pcf.GivingToCustomer.DataAccess;
 using Otus.Teaching.Pcf.GivingToCustomer.DataAccess.Data;
-using Otus.Teaching.Pcf.GivingToCustomer.DataAccess.Repositories;
 using Otus.Teaching.Pcf.GivingToCustomer.Integration;
 using IConfiguration = Microsoft.Extensions.Configuration.IConfiguration;
+using Otus.Teaching.Pcf.GivingToCustomer.DataAccess.Mongo;
+using Microsoft.Extensions.Options;
 
 namespace Otus.Teaching.Pcf.GivingToCustomer.WebHost
 {
@@ -35,16 +27,15 @@ namespace Otus.Teaching.Pcf.GivingToCustomer.WebHost
         {
             services.AddControllers().AddMvcOptions(x=> 
                 x.SuppressAsyncSuffixInActionNames = false);
-            services.AddScoped(typeof(IRepository<>), typeof(EfRepository<>));
+            services.AddScoped<IMongoDbContext, MongoDbContext>();
             services.AddScoped<INotificationGateway, NotificationGateway>();
-            services.AddScoped<IDbInitializer, EfDbInitializer>();
-            services.AddDbContext<DataContext>(x =>
-            {
-                //x.UseSqlite("Filename=PromocodeFactoryGivingToCustomerDb.sqlite");
-                x.UseNpgsql(Configuration.GetConnectionString("PromocodeFactoryGivingToCustomerDb"));
-                x.UseSnakeCaseNamingConvention();
-                x.UseLazyLoadingProxies();
-            });
+            services.AddScoped<IDbInitializer, MongoDbInitializer>();
+
+            services.Configure<MongoGivingToCustomerDatabaseSettings>(
+                    Configuration.GetSection("MongoDatabaseSettings"));
+
+            services.AddSingleton<IMongoGivingToCustomerDatabaseSettings>(sp =>
+                sp.GetRequiredService<IOptions<MongoGivingToCustomerDatabaseSettings>>().Value);
 
             services.AddOpenApiDocument(options =>
             {

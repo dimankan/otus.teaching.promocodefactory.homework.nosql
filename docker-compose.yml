@@ -47,16 +47,12 @@ services:
     restart: always
     ports:
       - "8093:80"
-    environment:
-      - "ConnectionStrings:PromocodeFactoryGivingToCustomerDb=Host=promocode-factory-giving-to-customer-db;Database=promocode_factory_giving_to_customer_db;Username=postgres;Password=docker"          
     depends_on: 
       - promocode-factory-giving-to-customer-db
   #GivingToCustomer Db
   promocode-factory-giving-to-customer-db:
-    image: "postgres:9.6.17"
-    container_name: 'promocode-factory-giving-to-customer-db'
+    image: mongo
+    container_name: 'promocode-factory-administration-db'
     restart: always 
     ports:
-      - 5435:5432
-    environment: 
-      - POSTGRES_PASSWORD=docker
+      - 27018:27017
