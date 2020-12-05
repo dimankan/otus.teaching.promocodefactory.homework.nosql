@@ -52,7 +52,7 @@ services:
   #GivingToCustomer Db
   promocode-factory-giving-to-customer-db:
     image: mongo
-    container_name: 'promocode-factory-administration-db'
+    container_name: 'promocode-factory-giving-to-customer-db'
     restart: always 
     ports:
       - 27018:27017
