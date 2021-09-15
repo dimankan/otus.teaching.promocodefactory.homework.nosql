@@ -1,20 +1,12 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Castle.Core.Configuration;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Http;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Configuration;
+using MongoDB.Driver;
 using Otus.Teaching.Pcf.Administration.Core.Abstractions.Repositories;
-using Otus.Teaching.Pcf.Administration.DataAccess;
 using Otus.Teaching.Pcf.Administration.DataAccess.Data;
 using Otus.Teaching.Pcf.Administration.DataAccess.Repositories;
-using Otus.Teaching.Pcf.Administration.Core.Domain.Administration;
+using System;
 using IConfiguration = Microsoft.Extensions.Configuration.IConfiguration;
 
 namespace Otus.Teaching.Pcf.Administration.WebHost
@@ -27,22 +19,36 @@ namespace Otus.Teaching.Pcf.Administration.WebHost
         {
             Configuration = configuration;
         }
-        
+
         // This method gets called by the runtime. Use this method to add services to the container.
         // For more information on how to configure your application, visit https://go.microsoft.com/fwlink/?LinkID=398940
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddControllers().AddMvcOptions(x=> 
-                x.SuppressAsyncSuffixInActionNames = false);
-            services.AddScoped(typeof(IRepository<>), typeof(EfRepository<>));
-            services.AddScoped<IDbInitializer, EfDbInitializer>();
-            services.AddDbContext<DataContext>(x =>
+            string connectionStringKey = "MongoAdministrationDb:ConnectionString";
+            string dbNameKey = "MongoAdministrationDb:Database";
+
+            string connectionString = Environment.GetEnvironmentVariable(connectionStringKey);
+            if (connectionString == null)
             {
-                //x.UseSqlite("Filename=PromocodeFactoryAdministrationDb.sqlite");
-                x.UseNpgsql(Configuration.GetConnectionString("PromocodeFactoryAdministrationDb"));
-                x.UseSnakeCaseNamingConvention();
-                x.UseLazyLoadingProxies();
-            });
+                connectionString = Configuration[connectionStringKey];
+            }
+
+            string dbName = Environment.GetEnvironmentVariable(dbNameKey);
+            if (dbName == null)
+            {
+                dbName = Configuration[dbNameKey];
+            }
+
+            services
+                .AddSingleton<IMongoClient>(_ => new MongoClient(connectionString))
+                .AddSingleton(serviceProvider => serviceProvider.GetRequiredService<IMongoClient>().GetDatabase(dbName))
+                .AddScoped(serviceProvider => serviceProvider.GetRequiredService<IMongoClient>().StartSession());
+
+            services.AddControllers().AddMvcOptions(x =>
+                x.SuppressAsyncSuffixInActionNames = false);
+
+            services.AddScoped(typeof(IRepository<>), typeof(MongoRepository<>));
+            services.AddScoped<IDbInitializer, MongoDbInitializer>();
 
             services.AddOpenApiDocument(options =>
             {
@@ -68,7 +74,7 @@ namespace Otus.Teaching.Pcf.Administration.WebHost
             {
                 x.DocExpansion = "list";
             });
-            
+
             app.UseHttpsRedirection();
 
             app.UseRouting();
@@ -77,7 +83,7 @@ namespace Otus.Teaching.Pcf.Administration.WebHost
             {
                 endpoints.MapControllers();
             });
-            
+
             dbInitializer.InitializeDb();
         }
     }

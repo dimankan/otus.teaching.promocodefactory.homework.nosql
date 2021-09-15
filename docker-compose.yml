@@ -5,21 +5,23 @@ services:
     build: src/Otus.Teaching.Pcf.Administration/
     container_name: 'promocode-factory-administration-api'
     restart: always
+    environment:
+      - "MongoAdministrationDb:ConnectionString=mongodb://root:example@promocode-factory-administration-mongo-db:27017"
+      - "MongoAdministrationDb:Database=PromocodeFactoryAdministrationDB"    
     ports:
       - "8091:80"
-    environment:
-      - "ConnectionStrings:PromocodeFactoryAdministrationDb=Host=promocode-factory-administration-db;Database=promocode_factory_administration_db;Username=postgres;Password=docker"          
     depends_on: 
-      - promocode-factory-administration-db
+      - promocode-factory-administration-mongo-db
   #Administration Db
-  promocode-factory-administration-db:
-    image: "postgres:9.6.17"
-    container_name: 'promocode-factory-administration-db'
-    restart: always 
+  promocode-factory-administration-mongo-db:
+    image: "mongo:4.2.3"
+    container_name: 'promocode-factory-administration-mongo-db'
+    restart: always
     ports:
-      - 5433:5432
-    environment: 
-      - POSTGRES_PASSWORD=docker
+      - 27017:27017    
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: example
 
   #ReceivingFromPartner Api
   promocode-factory-receiving-from-partner-api:
