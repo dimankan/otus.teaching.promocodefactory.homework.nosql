@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Otus.Teaching.Pcf.GivingToCustomer.Core.Abstractions.Repositories;
 using Otus.Teaching.Pcf.GivingToCustomer.Core.Domain;
+using Otus.Teaching.Pcf.GivingToCustomer.DataAccess.Repositories;
 using Otus.Teaching.Pcf.GivingToCustomer.WebHost.Mappers;
 using Otus.Teaching.Pcf.GivingToCustomer.WebHost.Models;
 
@@ -15,14 +16,13 @@ namespace Otus.Teaching.Pcf.GivingToCustomer.WebHost.Controllers
     /// </summary>
     [ApiController]
     [Route("api/v1/[controller]")]
-    public class CustomersController
-        : ControllerBase
+    public class CustomersController : ControllerBase
     {
-        private readonly IRepository<Customer> _customerRepository;
-        private readonly IRepository<Preference> _preferenceRepository;
+        private readonly GivingToCustomerMongoService<Customer> _customerRepository;
+        private readonly GivingToCustomerMongoService<Preference> _preferenceRepository;
 
-        public CustomersController(IRepository<Customer> customerRepository, 
-            IRepository<Preference> preferenceRepository)
+        public CustomersController(GivingToCustomerMongoService<Customer> customerRepository,
+            GivingToCustomerMongoService<Preference> preferenceRepository)
         {
             _customerRepository = customerRepository;
             _preferenceRepository = preferenceRepository;

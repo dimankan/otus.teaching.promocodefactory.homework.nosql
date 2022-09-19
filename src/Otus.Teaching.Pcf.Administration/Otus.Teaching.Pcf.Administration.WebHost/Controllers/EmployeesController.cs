@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using Otus.Teaching.Pcf.Administration.WebHost.Models;
 using Otus.Teaching.Pcf.Administration.Core.Abstractions.Repositories;
 using Otus.Teaching.Pcf.Administration.Core.Domain.Administration;
+using Otus.Teaching.Pcf.Administration.DataAccess.Repositories;
 
 namespace Otus.Teaching.Pcf.Administration.WebHost.Controllers
 {
@@ -14,12 +15,11 @@ namespace Otus.Teaching.Pcf.Administration.WebHost.Controllers
     /// </summary>
     [ApiController]
     [Route("api/v1/[controller]")]
-    public class EmployeesController
-        : ControllerBase
+    public class EmployeesController: ControllerBase
     {
-        private readonly IRepository<Employee> _employeeRepository;
+        private readonly AdministrationMongoService<Employee> _employeeRepository;
 
-        public EmployeesController(IRepository<Employee> employeeRepository)
+        public EmployeesController(AdministrationMongoService<Employee> employeeRepository)
         {
             _employeeRepository = employeeRepository;
         }

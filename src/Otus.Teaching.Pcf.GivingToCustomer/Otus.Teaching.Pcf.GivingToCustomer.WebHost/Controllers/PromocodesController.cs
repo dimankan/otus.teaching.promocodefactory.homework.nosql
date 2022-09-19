@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Otus.Teaching.Pcf.GivingToCustomer.Core.Abstractions.Repositories;
 using Otus.Teaching.Pcf.GivingToCustomer.Core.Domain;
+using Otus.Teaching.Pcf.GivingToCustomer.DataAccess.Repositories;
 using Otus.Teaching.Pcf.GivingToCustomer.WebHost.Mappers;
 using Otus.Teaching.Pcf.GivingToCustomer.WebHost.Models;
 
@@ -15,15 +16,16 @@ namespace Otus.Teaching.Pcf.GivingToCustomer.WebHost.Controllers
     /// </summary>
     [ApiController]
     [Route("api/v1/[controller]")]
-    public class PromocodesController
-        : ControllerBase
+    public class PromocodesController : ControllerBase
     {
-        private readonly IRepository<PromoCode> _promoCodesRepository;
-        private readonly IRepository<Preference> _preferencesRepository;
-        private readonly IRepository<Customer> _customersRepository;
+        private readonly GivingToCustomerMongoService<PromoCode> _promoCodesRepository;
+        private readonly GivingToCustomerMongoService<Preference> _preferencesRepository;
+        private readonly GivingToCustomerMongoService<Customer> _customersRepository;
 
-        public PromocodesController(IRepository<PromoCode> promoCodesRepository, 
-            IRepository<Preference> preferencesRepository, IRepository<Customer> customersRepository)
+
+        public PromocodesController(GivingToCustomerMongoService<PromoCode> promoCodesRepository,
+            GivingToCustomerMongoService<Preference> preferencesRepository,
+            GivingToCustomerMongoService<Customer> customersRepository)
         {
             _promoCodesRepository = promoCodesRepository;
             _preferencesRepository = preferencesRepository;

@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Threading.Tasks;
 using FluentAssertions;
+using MongoDB.Driver;
 using Otus.Teaching.Pcf.Administration.Core.Domain.Administration;
 using Otus.Teaching.Pcf.Administration.DataAccess.Repositories;
+using Otus.Teaching.Pcf.Administration.IntegrationTests.Data;
 using Otus.Teaching.Pcf.Administration.WebHost.Controllers;
 using Xunit;
 
@@ -11,13 +13,17 @@ namespace Otus.Teaching.Pcf.Administration.IntegrationTests.Components.WebHost.C
     [Collection(EfDatabaseCollection.DbCollection)]
     public class EmployeesControllerTests: IClassFixture<EfDatabaseFixture>
     {
-        private EfRepository<Employee> _employeesRepository;
+        private IMongoCollection<Employee> _employeesCollection;
         private EmployeesController _employeesController;
 
         public EmployeesControllerTests(EfDatabaseFixture efDatabaseFixture)
         {
-            _employeesRepository = new EfRepository<Employee>(efDatabaseFixture.DbContext);
-            _employeesController = new EmployeesController(_employeesRepository);
+
+            _employeesCollection = efDatabaseFixture.Db.GetCollection<Employee>("Employee");
+
+            var employeesRepository = new AdministrationMongoService<Employee>(new AdministrationMongoDatabaseSettingsTest());
+
+            _employeesController = new EmployeesController(employeesRepository);
         }
 
         [Fact]
