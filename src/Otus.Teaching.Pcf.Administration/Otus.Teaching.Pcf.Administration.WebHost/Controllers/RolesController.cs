@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using Otus.Teaching.Pcf.Administration.WebHost.Models;
 using Otus.Teaching.Pcf.Administration.Core.Abstractions.Repositories;
 using Otus.Teaching.Pcf.Administration.Core.Domain.Administration;
+using Otus.Teaching.Pcf.Administration.DataAccess.Repositories;
 
 namespace Otus.Teaching.Pcf.Administration.WebHost.Controllers
 {
@@ -15,9 +16,9 @@ namespace Otus.Teaching.Pcf.Administration.WebHost.Controllers
     [Route("api/v1/[controller]")]
     public class RolesController
     {
-        private readonly IRepository<Role> _rolesRepository;
+        private readonly AdministrationMongoService<Role> _rolesRepository;
 
-        public RolesController(IRepository<Role> rolesRepository)
+        public RolesController(AdministrationMongoService<Role> rolesRepository)
         {
             _rolesRepository = rolesRepository;
         }

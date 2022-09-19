@@ -17,6 +17,9 @@ using Otus.Teaching.Pcf.GivingToCustomer.DataAccess.Data;
 using Otus.Teaching.Pcf.GivingToCustomer.DataAccess.Repositories;
 using Otus.Teaching.Pcf.GivingToCustomer.Integration;
 using IConfiguration = Microsoft.Extensions.Configuration.IConfiguration;
+using Microsoft.Extensions.Options;
+using Otus.Teaching.Pcf.GivingToCustomer.Core.Abstractions.Settings;
+using Otus.Teaching.Pcf.GivingToCustomer.DataAccess.Settings;
 
 namespace Otus.Teaching.Pcf.GivingToCustomer.WebHost
 {
@@ -33,18 +36,17 @@ namespace Otus.Teaching.Pcf.GivingToCustomer.WebHost
         // For more information on how to configure your application, visit https://go.microsoft.com/fwlink/?LinkID=398940
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddControllers().AddMvcOptions(x=> 
-                x.SuppressAsyncSuffixInActionNames = false);
-            services.AddScoped(typeof(IRepository<>), typeof(EfRepository<>));
+            services.Configure<GivingToCustomerMongoDatabaseSettings>(Configuration.GetSection(nameof(GivingToCustomerMongoDatabaseSettings)));
+
+            services.AddSingleton<IGivingToCustomerMongoDatabaseSettings>(sp => sp.GetRequiredService<IOptions<GivingToCustomerMongoDatabaseSettings>>().Value);
+
+            services.AddSingleton(typeof(GivingToCustomerMongoService<>));
+
+            services.AddScoped<IDbInitializer, MongoDbInitializer>();
+
+            services.AddControllers().AddMvcOptions(x => x.SuppressAsyncSuffixInActionNames = false);
+
             services.AddScoped<INotificationGateway, NotificationGateway>();
-            services.AddScoped<IDbInitializer, EfDbInitializer>();
-            services.AddDbContext<DataContext>(x =>
-            {
-                //x.UseSqlite("Filename=PromocodeFactoryGivingToCustomerDb.sqlite");
-                x.UseNpgsql(Configuration.GetConnectionString("PromocodeFactoryGivingToCustomerDb"));
-                x.UseSnakeCaseNamingConvention();
-                x.UseLazyLoadingProxies();
-            });
 
             services.AddOpenApiDocument(options =>
             {
