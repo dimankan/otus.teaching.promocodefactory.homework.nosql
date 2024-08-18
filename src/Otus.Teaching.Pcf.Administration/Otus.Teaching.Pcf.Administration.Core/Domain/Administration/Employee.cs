@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 
 namespace Otus.Teaching.Pcf.Administration.Core.Domain.Administration
 {

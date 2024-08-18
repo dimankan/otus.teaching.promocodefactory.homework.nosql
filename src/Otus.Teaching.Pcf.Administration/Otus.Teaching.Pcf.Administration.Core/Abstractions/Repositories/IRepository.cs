@@ -8,16 +8,16 @@ using Otus.Teaching.Pcf.Administration.Core.Domain;
 namespace Otus.Teaching.Pcf.Administration.Core.Abstractions.Repositories
 {
     public interface IRepository<T>
-        where T: BaseEntity
+        where T : BaseEntity
     {
         Task<IEnumerable<T>> GetAllAsync();
-        
+
         Task<T> GetByIdAsync(Guid id);
-        
+
         Task<IEnumerable<T>> GetRangeByIdsAsync(List<Guid> ids);
-        
+
         Task<T> GetFirstWhere(Expression<Func<T, bool>> predicate);
-        
+
         Task<IEnumerable<T>> GetWhere(Expression<Func<T, bool>> predicate);
 
         Task AddAsync(T entity);
